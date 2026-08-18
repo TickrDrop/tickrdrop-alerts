@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerts &middot; TickrDrop</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0e0f10;--bg2:#16181a;--cream:#f4efe6;--gold:#e8c468;--orange:#ff6b3d;--muted:#9a958c;--line:#24272a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--cream);font-family:'Fraunces',Georgia,serif;font-weight:300;}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 24px 80px;}
+  .mark{font-size:20px;margin-bottom:8px;}
+  .mark b{font-weight:400;} .mark .d{color:var(--gold);font-weight:400;}
+  h1{font-size:26px;font-weight:300;margin:0 0 24px;}
+  .mono{font-family:'JetBrains Mono',Menlo,monospace;}
+  input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+        color:var(--cream);font-family:inherit;font-size:15px;width:260px;}
+  button{background:var(--gold);color:var(--bg);border:0;border-radius:8px;padding:12px 20px;
+         font-family:inherit;font-size:15px;cursor:pointer;}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0;}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:14px 18px;min-width:104px;}
+  .stat .n{font-size:24px;color:var(--gold);}
+  .stat .l{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;
+           text-transform:uppercase;color:var(--muted);margin-top:4px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+     color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:400;}
+  td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+        padding:3px 8px;border-radius:20px;}
+  .watching{background:rgba(232,196,104,.15);color:var(--gold);}
+  .fired{background:rgba(120,220,150,.15);color:#78dc96;}
+  .expired{background:rgba(154,149,140,.15);color:var(--muted);}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:3px;}
+  .warn{background:rgba(255,107,61,.12);border:1px solid rgba(255,107,61,.3);color:var(--orange);
+        padding:12px 16px;border-radius:8px;margin-bottom:20px;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mark"><b>Tickr</b><span class="d">Drop</span></div>
+  <h1>Alerts</h1>
+
+  <div id="gate">
+    <input id="key" type="password" placeholder="Admin key">
+    <button id="load">Open</button>
+  </div>
+
+  <div id="panel" style="display:none;">
+    <div id="warn"></div>
+    <div class="stats" id="stats"></div>
+    <table>
+      <thead><tr><th>Event</th><th>Watcher</th><th>Target</th><th>Last seen</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  $("load").addEventListener("click", load);
+  $("key").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+
+  async function load(){
+    const key = $("key").value.trim();
+    const res = await fetch("/.netlify/functions/list-alerts?key=" + encodeURIComponent(key));
+    const b = await res.json();
+    if (!res.ok){ alert(b.error || "Could not load."); return; }
+
+    $("gate").style.display = "none";
+    $("panel").style.display = "block";
+
+    $("warn").innerHTML = b.monitorEnabled ? "" :
+      '<div class="warn">Monitoring is off. Set MONITOR_ENABLED to true in Netlify to start checking prices.</div>';
+
+    $("stats").innerHTML = [
+      ["Watching", b.counts.watching],
+      ["Fired", b.counts.fired],
+      ["Expired", b.counts.expired],
+      ["Calls today", b.requestsUsedToday + " / " + b.cap]
+    ].map(([l,n]) => '<div class="stat"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>').join("");
+
+    $("rows").innerHTML = b.alerts.length ? b.alerts.map(a => {
+      const seen = a.lastSeenPrice != null
+        ? "$" + a.lastSeenPrice.toFixed(2) +
+          (a.priceAsOf ? '<div class="sub">as of ' + new Date(a.priceAsOf).toLocaleString() + '</div>' : "")
+        : '<span class="sub">not checked yet</span>';
+      return '<tr>' +
+        '<td>' + a.eventName + '<div class="sub">' + (a.eventDate||"") +
+          (a.venue ? " · " + a.venue : "") + '</div></td>' +
+        '<td class="mono" style="font-size:12.5px;">' + a.email + '</td>' +
+        '<td class="mono">$' + a.maxPrice.toFixed(2) + '</td>' +
+        '<td class="mono" style="font-size:13px;">' + seen + '</td>' +
+        '<td><span class="pill ' + a.status + '">' + a.status + '</span></td>' +
+      '</tr>';
+    }).join("") : '<tr><td colspan="5" class="sub" style="padding:24px 12px;">No alerts yet. Set one on the home page.</td></tr>';
+  }
+</script>
+</body>
+</html>
