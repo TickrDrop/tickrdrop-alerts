@@ -25,12 +25,13 @@
   h1{font-size:34px; line-height:1.2; font-weight:300; margin:0 0 10px; letter-spacing:-.02em;}
   .lede{color:var(--muted); font-size:16px; line-height:1.55; margin:0 0 40px;}
 
-  .step{margin-bottom:32px;}
+  .step{margin-bottom:30px;}
   .eyebrow{
     font-family:'JetBrains Mono',Menlo,monospace; font-size:11px;
     letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
-    margin-bottom:12px;
+    margin-bottom:6px;
   }
+  .hint{color:#6f6a63; font-size:13px; line-height:1.5; margin:0 0 12px;}
   input{
     width:100%; background:var(--bg2); border:1px solid var(--line);
     border-radius:9px; padding:15px 16px; color:var(--cream);
@@ -39,28 +40,16 @@
   input::placeholder{color:#5f5a53;}
   input:focus{outline:2px solid var(--gold); outline-offset:1px; border-color:transparent;}
 
-  .results{margin-top:10px; border:1px solid var(--line); border-radius:9px; overflow:hidden;}
-  .results:empty{display:none;}
-  .res{
-    display:block; width:100%; text-align:left; background:var(--bg2);
-    border:0; border-bottom:1px solid var(--line); padding:14px 16px;
-    color:var(--cream); font-family:inherit; font-size:15px; font-weight:300; cursor:pointer;
+  .qty{display:flex; gap:8px;}
+  .qty button{
+    flex:1; background:var(--bg2); border:1px solid var(--line); border-radius:9px;
+    padding:14px 0; color:var(--cream); font-family:'Fraunces',Georgia,serif;
+    font-size:16px; font-weight:300; cursor:pointer;
   }
-  .res:last-child{border-bottom:0;}
-  .res:hover,.res:focus{background:#1d2023; outline:none;}
-  .res .meta{display:block; color:var(--muted); font-size:13px; margin-top:3px;}
-
-  .picked{
-    background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--gold);
-    border-radius:9px; padding:16px 18px;
+  .qty button[aria-pressed="true"]{
+    background:rgba(232,196,104,.12); border-color:var(--gold); color:var(--gold);
   }
-  .picked .name{font-size:18px;}
-  .picked .meta{color:var(--muted); font-size:13px; margin-top:4px;}
-  .change{
-    background:none; border:0; color:var(--gold); cursor:pointer; padding:0;
-    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em;
-    text-transform:uppercase; margin-top:12px;
-  }
+  .qty button:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
 
   .price-row{position:relative;}
   .dollar{
@@ -77,12 +66,15 @@
   button.go:disabled{opacity:.4; cursor:not-allowed;}
   button.go:focus-visible{outline:2px solid var(--cream); outline-offset:2px;}
 
-  .note{color:#7d786f; font-size:12.5px; line-height:1.6; margin-top:18px;}
+  .note{color:#7d786f; font-size:12.5px; line-height:1.6; margin-top:20px;}
   .msg{padding:14px 16px; border-radius:9px; font-size:14.5px; line-height:1.5; margin-top:18px;}
   .msg.err{background:rgba(255,107,61,.12); color:var(--orange); border:1px solid rgba(255,107,61,.3);}
   .msg.ok{background:rgba(232,196,104,.1); color:var(--gold); border:1px solid rgba(232,196,104,.3);}
-  .hidden{display:none;}
-  .working{color:var(--muted); font-size:13px; margin-top:10px;}
+  details{margin-top:6px;}
+  summary{
+    color:var(--gold); cursor:pointer; font-family:'JetBrains Mono',monospace;
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:6px 0;
+  }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
@@ -92,35 +84,40 @@
   <div class="mark"><b>Tickr</b><span class="d">Drop</span></div>
 
   <h1>Name your price.</h1>
-  <p class="lede">Pick an event, tell us the most you'd pay, and we'll email you when the cheapest seat drops to your number.</p>
+  <p class="lede">Tell us the most you'd pay all-in &mdash; fees included &mdash; and we'll email you the moment a seat drops to your number.</p>
 
-  <!-- Step 1 -->
   <div class="step">
-    <div class="eyebrow">Event</div>
+    <div class="eyebrow">Event link</div>
+    <p class="hint">Open your event on Ticketmaster, then copy the address bar and paste it here.</p>
+    <input id="url" type="url" placeholder="https://www.ticketmaster.com/..." autocomplete="off">
+  </div>
 
-    <div id="searchBox">
-      <input id="q" type="text" placeholder="Start typing an artist or team&hellip;" autocomplete="off">
-      <div class="working hidden" id="working">Searching&hellip;</div>
-      <div class="results" id="results"></div>
-    </div>
-
-    <div id="pickedBox" class="picked hidden">
-      <div class="name" id="pName"></div>
-      <div class="meta" id="pMeta"></div>
-      <button class="change" id="change" type="button">Choose a different event</button>
+  <div class="step">
+    <div class="eyebrow">How many seats</div>
+    <p class="hint">We'll only alert you on listings that can sell this many together.</p>
+    <div class="qty" id="qty">
+      <button type="button" data-q="1" aria-pressed="true">1</button>
+      <button type="button" data-q="2" aria-pressed="false">2</button>
+      <button type="button" data-q="3" aria-pressed="false">3</button>
+      <button type="button" data-q="4" aria-pressed="false">4</button>
     </div>
   </div>
 
-  <!-- Step 2 -->
   <div class="step">
-    <div class="eyebrow">Most you'd pay, per ticket</div>
+    <div class="eyebrow">Most you'd pay, per ticket, all-in</div>
+    <p class="hint">Fees included. This is what you'd actually be charged at checkout.</p>
     <div class="price-row">
       <span class="dollar">$</span>
-      <input id="price" type="number" min="1" step="1" placeholder="120" inputmode="decimal">
+      <input id="price" type="number" min="1" step="1" placeholder="160" inputmode="decimal">
     </div>
+
+    <details>
+      <summary>Only certain sections?</summary>
+      <input id="sections" type="text" placeholder="413, 401, 405" autocomplete="off" style="margin-top:8px;">
+      <p class="hint" style="margin-top:8px;">Leave empty for anywhere in the venue.</p>
+    </details>
   </div>
 
-  <!-- Step 3 -->
   <div class="step">
     <div class="eyebrow">Where we'll reach you</div>
     <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
@@ -131,91 +128,38 @@
   <div id="msg"></div>
 
   <p class="note">
-    Prices shown are before marketplace fees. We check regularly, but resale
-    prices move fast &mdash; always confirm the total at checkout.
-    Pricing data provided by <a href="https://seatdata.io" style="color:#7d786f;">SeatData.io</a>.
+    Prices include marketplace fees. Resale inventory moves fast &mdash; a seat can
+    sell between our check and your click.
   </p>
 
 </div>
 
 <script>
   const $ = (id) => document.getElementById(id);
-  let picked = null;
-  let timer = null;
+  let quantity = 1;
 
-  function fmtDate(d){
-    if(!d) return "";
-    return new Date(d + "T12:00:00").toLocaleDateString("en-US",
-      {weekday:"short", month:"short", day:"numeric", year:"numeric"});
-  }
+  $("qty").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-q]");
+    if (!btn) return;
+    quantity = Number(btn.dataset.q);
+    document.querySelectorAll("#qty button").forEach((b) =>
+      b.setAttribute("aria-pressed", String(b === btn))
+    );
+  });
 
   function show(kind, text){
     $("msg").innerHTML = '<div class="msg ' + kind + '">' + text + '</div>';
   }
-  function clearMsg(){ $("msg").innerHTML = ""; }
-
-  $("q").addEventListener("input", () => {
-    clearTimeout(timer);
-    const q = $("q").value.trim();
-    $("results").innerHTML = "";
-    if (q.length < 3) { $("working").classList.add("hidden"); return; }
-    $("working").classList.remove("hidden");
-    timer = setTimeout(() => runSearch(q), 350);
-  });
-
-  async function runSearch(q){
-    try{
-      const res = await fetch("/.netlify/functions/search-events?q=" + encodeURIComponent(q));
-      const body = await res.json();
-      $("working").classList.add("hidden");
-
-      if (body.error) { show("err", body.error); return; }
-      if (!body.events.length){
-        $("results").innerHTML =
-          '<div class="res" style="cursor:default;color:#9a958c;">' +
-          'No upcoming events matched that. Try the performer or team name on its own.</div>';
-        return;
-      }
-
-      $("results").innerHTML = body.events.map((e, i) =>
-        '<button class="res" data-i="' + i + '">' + e.name +
-        '<span class="meta">' + fmtDate(e.date) + ' &middot; ' + e.venue +
-        (e.city ? ', ' + e.city : '') + '</span></button>'
-      ).join("");
-
-      document.querySelectorAll(".res[data-i]").forEach(btn => {
-        btn.addEventListener("click", () => pick(body.events[+btn.dataset.i]));
-      });
-    } catch {
-      $("working").classList.add("hidden");
-      show("err", "Search didn't go through. Try again in a moment.");
-    }
-  }
-
-  function pick(e){
-    picked = e;
-    $("pName").textContent = e.name;
-    $("pMeta").textContent = fmtDate(e.date) + " · " + e.venue + (e.city ? ", " + e.city : "");
-    $("searchBox").classList.add("hidden");
-    $("pickedBox").classList.remove("hidden");
-    clearMsg();
-    $("price").focus();
-  }
-
-  $("change").addEventListener("click", () => {
-    picked = null;
-    $("q").value = "";
-    $("results").innerHTML = "";
-    $("pickedBox").classList.add("hidden");
-    $("searchBox").classList.remove("hidden");
-    $("q").focus();
-  });
 
   $("go").addEventListener("click", async () => {
-    clearMsg();
-    if (!picked){ show("err", "Choose an event first."); return; }
+    $("msg").innerHTML = "";
+
+    const eventUrl = $("url").value.trim();
+    if (!eventUrl){ show("err", "Paste the Ticketmaster link for your event."); return; }
+
     const maxPrice = Number($("price").value);
     if (!(maxPrice > 0)){ show("err", "Enter the most you'd pay per ticket."); return; }
+
     const email = $("email").value.trim();
     if (!email){ show("err", "Add an email so we can reach you."); return; }
 
@@ -227,25 +171,24 @@
         method:"POST",
         headers:{"content-type":"application/json"},
         body: JSON.stringify({
-          email, maxPrice,
-          eventId: picked.eventId,
-          eventName: picked.name,
-          eventDate: picked.date,
-          venue: picked.venue,
-          city: picked.city,
-          tmEventId: picked.tmEventId
+          eventUrl, maxPrice, email, quantity,
+          sections: $("sections").value
         })
       });
       const body = await res.json();
 
       if (!res.ok){ show("err", body.error || "That didn't save."); return; }
 
-      show("ok", "Watching <strong>" + picked.name + "</strong> for you. " +
-        "We'll email " + email + " the moment the cheapest seat hits $" +
-        maxPrice.toFixed(2) + " or less.");
+      const a = body.alert;
+      show("ok",
+        "Watching <strong>" + a.eventName + "</strong>. We'll email " + a.email +
+        " when " + (a.quantity > 1 ? a.quantity + " seats together drop" : "a seat drops") +
+        " to $" + a.maxPrice.toFixed(2) + " or less, fees included.");
 
+      $("url").value = "";
       $("price").value = "";
       $("email").value = "";
+      $("sections").value = "";
     } catch {
       show("err", "That didn't save. Check your connection and try again.");
     } finally {
