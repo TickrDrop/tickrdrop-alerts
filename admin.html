@@ -9,7 +9,7 @@
   :root{--bg:#0e0f10;--bg2:#16181a;--cream:#f4efe6;--gold:#e8c468;--orange:#ff6b3d;--muted:#9a958c;--line:#24272a;}
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--cream);font-family:'Fraunces',Georgia,serif;font-weight:300;}
-  .wrap{max-width:860px;margin:0 auto;padding:40px 24px 80px;}
+  .wrap{max-width:940px;margin:0 auto;padding:40px 24px 80px;}
   .mark{font-size:20px;margin-bottom:8px;}
   .mark b{font-weight:400;} .mark .d{color:var(--gold);font-weight:400;}
   h1{font-size:26px;font-weight:300;margin:0 0 24px;}
@@ -51,7 +51,7 @@
     <div id="warn"></div>
     <div class="stats" id="stats"></div>
     <table>
-      <thead><tr><th>Event</th><th>Watcher</th><th>Target</th><th>Last seen</th><th>Status</th></tr></thead>
+      <thead><tr><th>Event</th><th>Watcher</th><th>Qty</th><th>Target</th><th>Last seen</th><th>Status</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
   </div>
@@ -59,7 +59,6 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-
   $("load").addEventListener("click", load);
   $("key").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
 
@@ -73,7 +72,7 @@
     $("panel").style.display = "block";
 
     $("warn").innerHTML = b.monitorEnabled ? "" :
-      '<div class="warn">Monitoring is off. Set MONITOR_ENABLED to true in Netlify to start checking prices.</div>';
+      '<div class="warn">Monitoring is off. Run check-prices by hand while on the trial.</div>';
 
     $("stats").innerHTML = [
       ["Watching", b.counts.watching],
@@ -85,17 +84,19 @@
     $("rows").innerHTML = b.alerts.length ? b.alerts.map(a => {
       const seen = a.lastSeenPrice != null
         ? "$" + a.lastSeenPrice.toFixed(2) +
-          (a.priceAsOf ? '<div class="sub">as of ' + new Date(a.priceAsOf).toLocaleString() + '</div>' : "")
+          (a.firedSeat ? '<div class="sub">' + a.firedSeat + '</div>' : "") +
+          (a.priceAsOf ? '<div class="sub">' + new Date(a.priceAsOf).toLocaleString() + '</div>' : "")
         : '<span class="sub">not checked yet</span>';
       return '<tr>' +
         '<td>' + a.eventName + '<div class="sub">' + (a.eventDate||"") +
-          (a.venue ? " · " + a.venue : "") + '</div></td>' +
+          (a.sections && a.sections.length ? " &middot; sec " + a.sections.join(", ") : "") + '</div></td>' +
         '<td class="mono" style="font-size:12.5px;">' + a.email + '</td>' +
+        '<td class="mono">' + (a.quantity || 1) + '</td>' +
         '<td class="mono">$' + a.maxPrice.toFixed(2) + '</td>' +
         '<td class="mono" style="font-size:13px;">' + seen + '</td>' +
         '<td><span class="pill ' + a.status + '">' + a.status + '</span></td>' +
       '</tr>';
-    }).join("") : '<tr><td colspan="5" class="sub" style="padding:24px 12px;">No alerts yet. Set one on the home page.</td></tr>';
+    }).join("") : '<tr><td colspan="6" class="sub" style="padding:24px 12px;">No alerts yet.</td></tr>';
   }
 </script>
 </body>
