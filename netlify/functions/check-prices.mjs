@@ -54,10 +54,17 @@ function hoursOld(iso) {
   return Math.round((Date.now() - new Date(iso).getTime()) / 3600000);
 }
 
+// SeatData's tm_event_id is NOT Ticketmaster's public event ID, so we can't
+// build a direct event URL from it. Searching by performer + city lands the
+// user on the right event page reliably instead.
+function buildBuyUrl(alert) {
+  const terms = [alert.eventName, alert.city].filter(Boolean).join(" ");
+  if (!terms) return "https://www.ticketmaster.com";
+  return `https://www.ticketmaster.com/search?q=${encodeURIComponent(terms)}`;
+}
+
 function emailBody(alert, price) {
-  const buyUrl = alert.tmEventId
-    ? `https://www.ticketmaster.com/event/${alert.tmEventId}`
-    : "https://www.ticketmaster.com";
+  const buyUrl = buildBuyUrl(alert);
 
   const age = hoursOld(price.asOf);
   const when = alert.eventDate
@@ -105,7 +112,7 @@ function emailBody(alert, price) {
        style="display:block;background:#e8c468;color:#0e0f10;text-decoration:none;
               text-align:center;padding:15px;border-radius:8px;font-size:16px;
               font-family:Georgia,serif;margin-bottom:22px;">
-      See tickets
+      Find these tickets
     </a>
 
     <p style="font-size:12px;line-height:1.6;color:#7d786f;margin:0 0 6px;">
