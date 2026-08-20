@@ -22,51 +22,30 @@ async function redis(command) {
   return (await res.json()).result;
 }
 
-// Ticketmaster event URLs look like:
-//   /karol-g-viajando-por-el-mundo-santa-clara-california-08-21-2026/event/1C006490E1A04E80
-// The slug carries a readable name and the date, so we can label the alert
-// without spending an API credit just to look up metadata.
-function parseEventUrl(raw) {
+// Events now arrive from Discovery search, which gives us a proper name,
+// venue and date. We still validate the URL and pull the event ID out of it,
+// since that URL is what TicketsData needs.
+function validateEventUrl(raw) {
   let u;
   try {
-    u = new URL(raw.trim());
+    u = new URL(String(raw).trim());
   } catch {
     return { error: "That doesn't look like a web address." };
   }
 
   if (!/(^|\.)ticketmaster\.com$/i.test(u.hostname)) {
-    return { error: "Paste a Ticketmaster event link for now." };
+    return { error: "That isn't a Ticketmaster event." };
   }
 
   const parts = u.pathname.split("/").filter(Boolean);
-  const eventIdx = parts.indexOf("event");
-  if (eventIdx < 1) {
-    return { error: "That's not an event page. Open the event, then copy the address." };
+  const i = parts.indexOf("event");
+  if (i < 1) {
+    return { error: "Choose an event from the search results." };
   }
-
-  const slug = parts[eventIdx - 1];
-  const eventId = parts[eventIdx + 1] || "";
-
-  // Trailing date in the slug, e.g. ...-08-21-2026
-  const dateMatch = slug.match(/-(\d{2})-(\d{2})-(\d{4})$/);
-  let eventDate = "";
-  let namePart = slug;
-  if (dateMatch) {
-    eventDate = `${dateMatch[3]}-${dateMatch[1]}-${dateMatch[2]}`;
-    namePart = slug.slice(0, dateMatch.index);
-  }
-
-  const eventName = namePart
-    .split("-")
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
 
   return {
     eventUrl: `https://www.ticketmaster.com${u.pathname}`,
-    eventId,
-    eventName: eventName || "Your event",
-    eventDate,
+    eventId: parts[i + 1] || "",
   };
 }
 
@@ -97,8 +76,11 @@ export default async (req) => {
     return json({ error: "Choose between 1 and 4 tickets." }, 400);
   }
 
-  const parsed = parseEventUrl(String(input.eventUrl || ""));
+  const parsed = validateEventUrl(input.eventUrl || "");
   if (parsed.error) return json({ error: parsed.error }, 400);
+
+  const eventName = String(input.eventName || "").trim().slice(0, 200);
+  if (!eventName) return json({ error: "Choose an event first." }, 400);
 
   const sections = String(input.sections || "")
     .split(",")
@@ -114,9 +96,10 @@ export default async (req) => {
     sections,
     eventUrl: parsed.eventUrl,
     eventId: parsed.eventId,
-    eventName: parsed.eventName,
-    eventDate: parsed.eventDate,
+    eventName,
+    eventDate: String(input.eventDate || "").slice(0, 10),
     venue: String(input.venue || "").slice(0, 200),
+    city: String(input.city || "").slice(0, 100),
     status: "watching",
     createdAt: new Date().toISOString(),
     lastCheckedAt: null,
