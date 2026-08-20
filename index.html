@@ -40,6 +40,30 @@
   input::placeholder{color:#5f5a53;}
   input:focus{outline:2px solid var(--gold); outline-offset:1px; border-color:transparent;}
 
+  .results{margin-top:10px; border:1px solid var(--line); border-radius:9px; overflow:hidden;}
+  .results:empty{display:none;}
+  .res{
+    display:block; width:100%; text-align:left; background:var(--bg2);
+    border:0; border-bottom:1px solid var(--line); padding:14px 16px;
+    color:var(--cream); font-family:inherit; font-size:15px; font-weight:300; cursor:pointer;
+  }
+  .res:last-child{border-bottom:0;}
+  .res:hover,.res:focus{background:#1d2023; outline:none;}
+  .res .meta{display:block; color:var(--muted); font-size:13px; margin-top:3px;}
+  .picked{
+    background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--gold);
+    border-radius:9px; padding:16px 18px;
+  }
+  .picked .name{font-size:18px;}
+  .picked .meta{color:var(--muted); font-size:13px; margin-top:4px;}
+  .change{
+    background:none; border:0; color:var(--gold); cursor:pointer; padding:0;
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; margin-top:12px;
+  }
+  .working{color:var(--muted); font-size:13px; margin-top:10px;}
+  .hidden{display:none;}
+
   .qty{display:flex; gap:8px;}
   .qty button{
     flex:1; background:var(--bg2); border:1px solid var(--line); border-radius:9px;
@@ -87,9 +111,19 @@
   <p class="lede">Tell us the most you'd pay all-in &mdash; fees included &mdash; and we'll email you the moment a seat drops to your number.</p>
 
   <div class="step">
-    <div class="eyebrow">Event link</div>
-    <p class="hint">Open your event on Ticketmaster, then copy the address bar and paste it here.</p>
-    <input id="url" type="url" placeholder="https://www.ticketmaster.com/..." autocomplete="off">
+    <div class="eyebrow">Event</div>
+
+    <div id="searchBox">
+      <input id="q" type="text" placeholder="Start typing an artist or team&hellip;" autocomplete="off">
+      <div class="working hidden" id="working">Searching&hellip;</div>
+      <div class="results" id="results"></div>
+    </div>
+
+    <div id="pickedBox" class="picked hidden">
+      <div class="name" id="pName"></div>
+      <div class="meta" id="pMeta"></div>
+      <button class="change" id="change" type="button">Choose a different event</button>
+    </div>
   </div>
 
   <div class="step">
@@ -137,6 +171,75 @@
 <script>
   const $ = (id) => document.getElementById(id);
   let quantity = 1;
+  let picked = null;
+  let timer = null;
+
+  function fmtDate(d){
+    if(!d) return "";
+    return new Date(d + "T12:00:00").toLocaleDateString("en-US",
+      {weekday:"short", month:"short", day:"numeric", year:"numeric"});
+  }
+
+  function show(kind, text){
+    $("msg").innerHTML = '<div class="msg ' + kind + '">' + text + '</div>';
+  }
+
+  $("q").addEventListener("input", () => {
+    clearTimeout(timer);
+    const q = $("q").value.trim();
+    $("results").innerHTML = "";
+    if (q.length < 3) { $("working").classList.add("hidden"); return; }
+    $("working").classList.remove("hidden");
+    timer = setTimeout(() => runSearch(q), 350);
+  });
+
+  async function runSearch(q){
+    try{
+      const res = await fetch("/.netlify/functions/search-events?q=" + encodeURIComponent(q));
+      const body = await res.json();
+      $("working").classList.add("hidden");
+
+      if (body.error) { show("err", body.error); return; }
+      if (!body.events.length){
+        $("results").innerHTML =
+          '<div class="res" style="cursor:default;color:#9a958c;">' +
+          'Nothing upcoming matched that. Try the artist or team name on its own.</div>';
+        return;
+      }
+
+      $("results").innerHTML = body.events.map((e, i) =>
+        '<button class="res" data-i="' + i + '">' + e.name +
+        '<span class="meta">' + fmtDate(e.date) + ' &middot; ' + e.venue +
+        (e.city ? ', ' + e.city : '') + '</span></button>'
+      ).join("");
+
+      document.querySelectorAll(".res[data-i]").forEach(btn => {
+        btn.addEventListener("click", () => pick(body.events[+btn.dataset.i]));
+      });
+    } catch {
+      $("working").classList.add("hidden");
+      show("err", "Search didn't go through. Try again in a moment.");
+    }
+  }
+
+  function pick(e){
+    picked = e;
+    $("pName").textContent = e.name;
+    $("pMeta").textContent = fmtDate(e.date) + " · " + e.venue + (e.city ? ", " + e.city : "");
+    $("searchBox").classList.add("hidden");
+    $("pickedBox").classList.remove("hidden");
+    $("msg").innerHTML = "";
+    $("price").focus();
+  }
+
+  $("change").addEventListener("click", () => {
+    picked = null;
+    $("q").value = "";
+    $("results").innerHTML = "";
+    $("pickedBox").classList.add("hidden");
+    $("searchBox").classList.remove("hidden");
+    $("q").focus();
+  });
 
   $("qty").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-q]");
@@ -147,15 +250,10 @@
     );
   });
 
-  function show(kind, text){
-    $("msg").innerHTML = '<div class="msg ' + kind + '">' + text + '</div>';
-  }
-
   $("go").addEventListener("click", async () => {
     $("msg").innerHTML = "";
 
-    const eventUrl = $("url").value.trim();
-    if (!eventUrl){ show("err", "Paste the Ticketmaster link for your event."); return; }
+    if (!picked){ show("err", "Choose an event first."); return; }
 
     const maxPrice = Number($("price").value);
     if (!(maxPrice > 0)){ show("err", "Enter the most you'd pay per ticket."); return; }
@@ -171,7 +269,12 @@
         method:"POST",
         headers:{"content-type":"application/json"},
         body: JSON.stringify({
-          eventUrl, maxPrice, email, quantity,
+          eventUrl: picked.url,
+          eventName: picked.name,
+          eventDate: picked.date,
+          venue: picked.venue,
+          city: picked.city,
+          maxPrice, email, quantity,
           sections: $("sections").value
         })
       });
@@ -185,7 +288,6 @@
         " when " + (a.quantity > 1 ? a.quantity + " seats together drop" : "a seat drops") +
         " to $" + a.maxPrice.toFixed(2) + " or less, fees included.");
 
-      $("url").value = "";
       $("price").value = "";
       $("email").value = "";
       $("sections").value = "";
