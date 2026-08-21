@@ -41,8 +41,8 @@
 <section class="container section">
   <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;">
     <div>
-      <h2 style="font-size: clamp(26px, 3vw, 34px);">Trending right now</h2>
-      <div class="eyebrow" style="margin-top: 8px;">— Live from Ticketmaster</div>
+      <h2 style="font-size: clamp(26px, 3vw, 34px);">Happening soon</h2>
+      <div class="eyebrow" style="margin-top: 8px;">— Next up on Ticketmaster</div>
     </div>
     <div class="seg-tabs" id="segTabs">
       <button class="seg-tab active" data-seg="">All</button>
@@ -176,7 +176,7 @@ async function runSearch(q) {
   }
 }
 
-/* ---------- trending grid ---------- */
+/* ---------- upcoming grid ---------- */
 async function loadGrid(segment) {
   $('grid').innerHTML = '<div class="muted" style="font-family: var(--mono); font-size:13px;">Loading events…</div>';
   try {
