@@ -1,303 +1,164 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Set an alert &middot; TickrDrop</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0e0f10; --bg2:#16181a; --cream:#f4efe6; --gold:#e8c468;
-    --orange:#ff6b3d; --muted:#9a958c; --line:#24272a;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; background:var(--bg); color:var(--cream);
-    font-family:'Fraunces',Georgia,serif; font-weight:300;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:560px; margin:0 auto; padding:48px 24px 80px;}
-  .mark{font-size:22px; letter-spacing:-.02em; margin-bottom:44px;}
-  .mark b{font-weight:400;}
-  .mark .d{color:var(--gold); font-weight:400;}
-  h1{font-size:34px; line-height:1.2; font-weight:300; margin:0 0 10px; letter-spacing:-.02em;}
-  .lede{color:var(--muted); font-size:16px; line-height:1.55; margin:0 0 40px;}
-
-  .step{margin-bottom:30px;}
-  .eyebrow{
-    font-family:'JetBrains Mono',Menlo,monospace; font-size:11px;
-    letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
-    margin-bottom:6px;
-  }
-  .hint{color:#6f6a63; font-size:13px; line-height:1.5; margin:0 0 12px;}
-  input{
-    width:100%; background:var(--bg2); border:1px solid var(--line);
-    border-radius:9px; padding:15px 16px; color:var(--cream);
-    font-family:'Fraunces',Georgia,serif; font-size:16px; font-weight:300;
-  }
-  input::placeholder{color:#5f5a53;}
-  input:focus{outline:2px solid var(--gold); outline-offset:1px; border-color:transparent;}
-
-  .results{margin-top:10px; border:1px solid var(--line); border-radius:9px; overflow:hidden;}
-  .results:empty{display:none;}
-  .res{
-    display:block; width:100%; text-align:left; background:var(--bg2);
-    border:0; border-bottom:1px solid var(--line); padding:14px 16px;
-    color:var(--cream); font-family:inherit; font-size:15px; font-weight:300; cursor:pointer;
-  }
-  .res:last-child{border-bottom:0;}
-  .res:hover,.res:focus{background:#1d2023; outline:none;}
-  .res .meta{display:block; color:var(--muted); font-size:13px; margin-top:3px;}
-  .picked{
-    background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--gold);
-    border-radius:9px; padding:16px 18px;
-  }
-  .picked .name{font-size:18px;}
-  .picked .meta{color:var(--muted); font-size:13px; margin-top:4px;}
-  .change{
-    background:none; border:0; color:var(--gold); cursor:pointer; padding:0;
-    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em;
-    text-transform:uppercase; margin-top:12px;
-  }
-  .working{color:var(--muted); font-size:13px; margin-top:10px;}
-  .hidden{display:none;}
-
-  .qty{display:flex; gap:8px;}
-  .qty button{
-    flex:1; background:var(--bg2); border:1px solid var(--line); border-radius:9px;
-    padding:14px 0; color:var(--cream); font-family:'Fraunces',Georgia,serif;
-    font-size:16px; font-weight:300; cursor:pointer;
-  }
-  .qty button[aria-pressed="true"]{
-    background:rgba(232,196,104,.12); border-color:var(--gold); color:var(--gold);
-  }
-  .qty button:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
-
-  .price-row{position:relative;}
-  .dollar{
-    position:absolute; left:16px; top:50%; transform:translateY(-50%);
-    color:var(--muted); font-size:16px; pointer-events:none;
-  }
-  .price-row input{padding-left:30px;}
-
-  button.go{
-    width:100%; background:var(--gold); color:var(--bg); border:0; border-radius:9px;
-    padding:16px; font-family:'Fraunces',Georgia,serif; font-size:17px;
-    cursor:pointer; margin-top:8px;
-  }
-  button.go:disabled{opacity:.4; cursor:not-allowed;}
-  button.go:focus-visible{outline:2px solid var(--cream); outline-offset:2px;}
-
-  .note{color:#7d786f; font-size:12.5px; line-height:1.6; margin-top:20px;}
-  .msg{padding:14px 16px; border-radius:9px; font-size:14.5px; line-height:1.5; margin-top:18px;}
-  .msg.err{background:rgba(255,107,61,.12); color:var(--orange); border:1px solid rgba(255,107,61,.3);}
-  .msg.ok{background:rgba(232,196,104,.1); color:var(--gold); border:1px solid rgba(232,196,104,.3);}
-  details{margin-top:6px;}
-  summary{
-    color:var(--gold); cursor:pointer; font-family:'JetBrains Mono',monospace;
-    font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:6px 0;
-  }
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
-</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GJZHSVKT7E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-GJZHSVKT7E');
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TickrDrop — Hunt every deal. Never overpay again.</title>
+<meta name="description" content="Set your price. We watch Ticketmaster resale and email you the moment a ticket drops to your number — fees included." />
+<link rel="icon" type="image/x-icon" href="favicon.ico" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="wrap">
+<div id="nav-mount"></div>
 
-  <div class="mark"><b>Tickr</b><span class="d">Drop</span></div>
-
-  <h1>Name your price.</h1>
-  <p class="lede">Tell us the most you'd pay all-in &mdash; fees included &mdash; and we'll email you the moment a seat drops to your number.</p>
-
-  <div class="step">
-    <div class="eyebrow">Event</div>
-
-    <div id="searchBox">
-      <input id="q" type="text" placeholder="Start typing an artist or team&hellip;" autocomplete="off">
-      <div class="working hidden" id="working">Searching&hellip;</div>
-      <div class="results" id="results"></div>
-    </div>
-
-    <div id="pickedBox" class="picked hidden">
-      <div class="name" id="pName"></div>
-      <div class="meta" id="pMeta"></div>
-      <button class="change" id="change" type="button">Choose a different event</button>
-    </div>
+<header class="container section" style="padding-top: 100px; padding-bottom: 60px;">
+  <div class="eyebrow fade-up">— Closed beta · Summer 2026</div>
+  <h1 class="fade-up delay-1" style="margin-top: 18px; max-width: 12ch;">
+    Hunt every deal. <em class="gold">Never overpay again.</em>
+  </h1>
+  <p class="fade-up delay-2" style="font-size: 21px; line-height: 1.5; max-width: 56ch; margin-top: 28px; color: var(--ink-dim);">
+    You pick the event. You set the most you'd pay &mdash; fees included. TickrDrop watches
+    every ticket listed on Ticketmaster and emails you the moment a seat hits your number.
+  </p>
+  <div class="fade-up delay-3" style="margin-top: 40px; display: flex; gap: 12px; flex-wrap: wrap;">
+    <a class="btn btn-primary btn-lg" href="/activate.html">Set an alert →</a>
+    <a href="#how" class="btn btn-lg">How it works</a>
   </div>
-
-  <div class="step">
-    <div class="eyebrow">How many seats</div>
-    <p class="hint">We'll only alert you on listings that can sell this many together.</p>
-    <div class="qty" id="qty">
-      <button type="button" data-q="1" aria-pressed="true">1</button>
-      <button type="button" data-q="2" aria-pressed="false">2</button>
-      <button type="button" data-q="3" aria-pressed="false">3</button>
-      <button type="button" data-q="4" aria-pressed="false">4</button>
-    </div>
+  <div class="fade-up delay-4" style="margin-top: 32px; display: flex; gap: 28px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint);">
+    <span><span class="live-dot"></span> &nbsp; Live Ticketmaster inventory</span>
+    <span>Free during beta</span>
+    <span>All-in prices, fees included</span>
   </div>
+</header>
 
-  <div class="step">
-    <div class="eyebrow">Most you'd pay, per ticket, all-in</div>
-    <p class="hint">Fees included. This is what you'd actually be charged at checkout.</p>
-    <div class="price-row">
-      <span class="dollar">$</span>
-      <input id="price" type="number" min="1" step="1" placeholder="160" inputmode="decimal">
-    </div>
-
-    <details>
-      <summary>Only certain sections?</summary>
-      <input id="sections" type="text" placeholder="413, 401, 405" autocomplete="off" style="margin-top:8px;">
-      <p class="hint" style="margin-top:8px;">Leave empty for anywhere in the venue.</p>
-    </details>
+<!-- Live marquee: real upcoming events pulled from Ticketmaster Discovery -->
+<section class="section-sm" style="border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-2); padding: 24px 0; overflow: hidden;">
+  <div id="ticker" class="ticker-track">
+    <span class="muted" style="font-family: var(--mono); font-size: 12px;">Loading live events…</span>
   </div>
+</section>
 
-  <div class="step">
-    <div class="eyebrow">Where we'll reach you</div>
-    <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
-  </div>
-
-  <button class="go" id="go" type="button">Start watching</button>
-
-  <div id="msg"></div>
-
-  <p class="note">
-    Prices include marketplace fees. Resale inventory moves fast &mdash; a seat can
-    sell between our check and your click.
+<section id="how" class="section container">
+  <div class="eyebrow">— How it works</div>
+  <h2 style="margin-top: 14px; max-width: 18ch;">Every seat on Ticketmaster. One alert.</h2>
+  <p class="muted" style="font-size: 18px; margin-top: 18px; max-width: 60ch; line-height: 1.55;">
+    TickrDrop watches every ticket listed for your event &mdash; resale seats and tickets
+    sold by the venue &mdash; and emails you the moment one matches the price you set.
   </p>
 
-</div>
+  <div class="grid-4" style="margin-top: 56px;">
+    <div class="card card-hover">
+      <div class="eyebrow" style="color: var(--accent);">01</div>
+      <h3 style="margin-top: 14px; font-size: 22px;">Find your event</h3>
+      <p class="muted" style="margin-top: 12px; line-height: 1.55; font-size: 16px;">Search any artist or team. Pick the date you want.</p>
+    </div>
+    <div class="card card-hover">
+      <div class="eyebrow" style="color: var(--accent);">02</div>
+      <h3 style="margin-top: 14px; font-size: 22px;">Name your price</h3>
+      <p class="muted" style="margin-top: 12px; line-height: 1.55; font-size: 16px;">How many seats, and the most you'd pay each &mdash; fees included.</p>
+    </div>
+    <div class="card card-hover">
+      <div class="eyebrow" style="color: var(--accent);">03</div>
+      <h3 style="margin-top: 14px; font-size: 22px;">We watch</h3>
+      <p class="muted" style="margin-top: 12px; line-height: 1.55; font-size: 16px;">Live inventory, checked on a schedule, in the background.</p>
+    </div>
+    <div class="card card-hover">
+      <div class="eyebrow" style="color: var(--accent);">04</div>
+      <h3 style="margin-top: 14px; font-size: 22px;">Get the alert</h3>
+      <p class="muted" style="margin-top: 12px; line-height: 1.55; font-size: 16px;">Email with the exact section, row and total &mdash; and a link to the event.</p>
+    </div>
+  </div>
+</section>
 
+<section class="section" style="background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+  <div class="container">
+    <div class="grid-2" style="align-items: center; gap: 64px;">
+      <div>
+        <div class="eyebrow">— The price you see</div>
+        <h2 style="margin-top: 14px;">No surprises <em class="gold">at checkout.</em></h2>
+        <p class="muted" style="font-size: 18px; line-height: 1.6; margin-top: 22px;">
+          Most ticket sites quote you a price, then add fees at the last step. A $115 ticket
+          becomes $137 when you're already reaching for your card.
+        </p>
+        <p class="muted" style="font-size: 18px; line-height: 1.6; margin-top: 18px;">
+          TickrDrop compares against the all-in price &mdash; what you'd actually be charged.
+          Set your number at $140 and we won't email you about a $115 ticket that costs $167.
+        </p>
+        <p class="muted" style="font-size: 16px; line-height: 1.6; margin-top: 18px; font-style: italic;">
+          Free while we're in closed beta. No card, no subscription.
+        </p>
+      </div>
+      <div class="card" style="padding: 36px; background: var(--bg); border-color: var(--line-strong);">
+        <div class="eyebrow" style="margin-bottom: 20px;">A real alert</div>
+        <div style="font-family: var(--serif); font-size: 20px;">Section 413 · Row 26</div>
+        <div class="divider" style="margin: 20px 0;"></div>
+        <table style="width:100%; font-family: var(--mono); font-size: 14px;">
+          <tr><td class="muted" style="padding-bottom:8px;">Ticket</td><td style="text-align:right;">$115.00</td></tr>
+          <tr><td class="muted" style="padding-bottom:12px;">Fees</td><td style="text-align:right;">$21.85</td></tr>
+          <tr style="border-top:1px solid var(--line-strong);">
+            <td style="padding-top:12px;">You pay</td>
+            <td style="text-align:right; padding-top:12px; font-size:22px; color: var(--accent);">$136.85</td>
+          </tr>
+        </table>
+        <a class="btn btn-primary btn-block" href="/activate.html" style="margin-top: 28px;">Set an alert →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section container">
+  <div class="grid-2" style="gap: 80px;">
+    <div>
+      <div class="eyebrow">— Why we built this</div>
+      <h2 style="margin-top: 14px;">A direct buying channel.<br><em class="gold">Not another comparison site.</em></h2>
+    </div>
+    <div style="display: grid; gap: 24px; font-size: 17px; line-height: 1.65; color: var(--ink-dim);">
+      <p>Every other tool makes you check, refresh, compare. By the time you find the right price, it's gone — bought by someone faster, or by a bot.</p>
+      <p>TickrDrop is built around one idea: you tell us the price you'd actually pay, and we tell you the moment it exists. No refreshing. No timing the market. No overpaying because you gave up watching.</p>
+      <p style="color: var(--ink);">— TJ Wurtz, Founder</p>
+    </div>
+  </div>
+</section>
+
+<div id="footer-mount"></div>
+<script src="chrome.js"></script>
 <script>
-  const $ = (id) => document.getElementById(id);
-  let quantity = 1;
-  let picked = null;
-  let timer = null;
+  renderChrome('home');
 
-  function fmtDate(d){
-    if(!d) return "";
-    return new Date(d + "T12:00:00").toLocaleDateString("en-US",
-      {weekday:"short", month:"short", day:"numeric", year:"numeric"});
-  }
-
-  function show(kind, text){
-    $("msg").innerHTML = '<div class="msg ' + kind + '">' + text + '</div>';
-  }
-
-  $("q").addEventListener("input", () => {
-    clearTimeout(timer);
-    const q = $("q").value.trim();
-    $("results").innerHTML = "";
-    if (q.length < 3) { $("working").classList.add("hidden"); return; }
-    $("working").classList.remove("hidden");
-    timer = setTimeout(() => runSearch(q), 350);
-  });
-
-  async function runSearch(q){
-    try{
-      const res = await fetch("/.netlify/functions/search-events?q=" + encodeURIComponent(q));
+  // Populate the marquee with genuinely upcoming events.
+  (async function loadTicker() {
+    const el = document.getElementById('ticker');
+    try {
+      const res = await fetch('/.netlify/functions/trending-events?size=14');
       const body = await res.json();
-      $("working").classList.add("hidden");
+      const events = (body.events || []).filter(e => e.from);
 
-      if (body.error) { show("err", body.error); return; }
-      if (!body.events.length){
-        $("results").innerHTML =
-          '<div class="res" style="cursor:default;color:#9a958c;">' +
-          'Nothing upcoming matched that. Try the artist or team name on its own.</div>';
-        return;
-      }
+      if (!events.length) { el.remove(); return; }
 
-      $("results").innerHTML = body.events.map((e, i) =>
-        '<button class="res" data-i="' + i + '">' + e.name +
-        '<span class="meta">' + fmtDate(e.date) + ' &middot; ' + e.venue +
-        (e.city ? ', ' + e.city : '') + '</span></button>'
-      ).join("");
+      const fmt = d => new Date(d + 'T12:00:00')
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-      document.querySelectorAll(".res[data-i]").forEach(btn => {
-        btn.addEventListener("click", () => pick(body.events[+btn.dataset.i]));
-      });
+      const item = e =>
+        `<span><span style="color: var(--accent);">◆</span> ${e.name} — ${fmt(e.date)}` +
+        `${e.city ? ' · ' + e.city : ''} — from $${e.from}</span>`;
+
+      // Duplicated so the marquee loops seamlessly.
+      el.innerHTML = events.map(item).join('') + events.map(item).join('');
+      el.classList.add('ticker-running');
     } catch {
-      $("working").classList.add("hidden");
-      show("err", "Search didn't go through. Try again in a moment.");
+      el.remove();
     }
-  }
-
-  function pick(e){
-    picked = e;
-    $("pName").textContent = e.name;
-    $("pMeta").textContent = fmtDate(e.date) + " · " + e.venue + (e.city ? ", " + e.city : "");
-    $("searchBox").classList.add("hidden");
-    $("pickedBox").classList.remove("hidden");
-    $("msg").innerHTML = "";
-    $("price").focus();
-  }
-
-  $("change").addEventListener("click", () => {
-    picked = null;
-    $("q").value = "";
-    $("results").innerHTML = "";
-    $("pickedBox").classList.add("hidden");
-    $("searchBox").classList.remove("hidden");
-    $("q").focus();
-  });
-
-  $("qty").addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-q]");
-    if (!btn) return;
-    quantity = Number(btn.dataset.q);
-    document.querySelectorAll("#qty button").forEach((b) =>
-      b.setAttribute("aria-pressed", String(b === btn))
-    );
-  });
-
-  $("go").addEventListener("click", async () => {
-    $("msg").innerHTML = "";
-
-    if (!picked){ show("err", "Choose an event first."); return; }
-
-    const maxPrice = Number($("price").value);
-    if (!(maxPrice > 0)){ show("err", "Enter the most you'd pay per ticket."); return; }
-
-    const email = $("email").value.trim();
-    if (!email){ show("err", "Add an email so we can reach you."); return; }
-
-    $("go").disabled = true;
-    $("go").textContent = "Saving…";
-
-    try{
-      const res = await fetch("/.netlify/functions/create-alert", {
-        method:"POST",
-        headers:{"content-type":"application/json"},
-        body: JSON.stringify({
-          eventUrl: picked.url,
-          eventName: picked.name,
-          eventDate: picked.date,
-          venue: picked.venue,
-          city: picked.city,
-          maxPrice, email, quantity,
-          sections: $("sections").value
-        })
-      });
-      const body = await res.json();
-
-      if (!res.ok){ show("err", body.error || "That didn't save."); return; }
-
-      const a = body.alert;
-      show("ok",
-        "Watching <strong>" + a.eventName + "</strong>. We'll email " + a.email +
-        " when " + (a.quantity > 1 ? a.quantity + " seats together drop" : "a seat drops") +
-        " to $" + a.maxPrice.toFixed(2) + " or less, fees included.");
-
-      $("price").value = "";
-      $("email").value = "";
-      $("sections").value = "";
-    } catch {
-      show("err", "That didn't save. Check your connection and try again.");
-    } finally {
-      $("go").disabled = false;
-      $("go").textContent = "Start watching";
-    }
-  });
+  })();
 </script>
 </body>
 </html>
