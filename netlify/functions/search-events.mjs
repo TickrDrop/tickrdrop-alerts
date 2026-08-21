@@ -50,6 +50,10 @@ export default async (req) => {
     .filter((e) => e.url && e.dates?.start?.localDate)
     .map((e) => {
       const venue = e._embedded?.venues?.[0] || {};
+      const images = e.images || [];
+      const wide = images
+        .filter((i) => i.url && i.ratio === "16_9" && (i.width || 0) >= 480)
+        .sort((a, b) => (a.width || 0) - (b.width || 0))[0];
       return {
         name: e.name,
         date: e.dates.start.localDate,
@@ -57,6 +61,10 @@ export default async (req) => {
         venue: venue.name || "",
         city: venue.city?.name || "",
         state: venue.state?.stateCode || "",
+        image: (wide || images.find((i) => i.url) || {}).url || null,
+        // Static venue map, when Ticketmaster publishes one. Shown next to the
+        // section picker so people can see the layout while choosing.
+        seatmap: e.seatmap?.staticUrl || null,
         url: e.url,
       };
     })
