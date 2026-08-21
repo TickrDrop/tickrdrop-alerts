@@ -56,7 +56,13 @@ async function fetchListings(eventUrl, platform = "ticketmaster") {
   }
 
   // Never echo the URL back — it carries the credentials.
-  if (!res.ok) return { error: `TicketsData returned ${res.status}.` };
+  if (!res.ok) {
+    let detail = "";
+    try {
+      detail = (await res.text()).slice(0, 300);
+    } catch {}
+    return { error: `TicketsData returned ${res.status}. ${detail}` };
+  }
 
   let payload;
   try {
@@ -198,14 +204,20 @@ async function sendEmail(alert, hit, asOf) {
     body: JSON.stringify({
       from: process.env.ALERT_FROM_EMAIL || "onboarding@resend.dev",
       to: [alert.email],
-      subject: `${alert.eventName} — $${hit.total.toFixed(2)} all-in`,
+      subject: `${alert.eventName.slice(0, 60)} — $${hit.total.toFixed(2)} all-in`,
       html: emailBody(alert, hit, asOf),
     }),
   });
   return res.ok;
 }
 
-export default async () => {
+export default async (req) => {
+  // Publicly reachable now, so it needs a key.
+  const supplied = new URL(req.url).searchParams.get("key") || "";
+  if (!process.env.ADMIN_KEY || supplied !== process.env.ADMIN_KEY) {
+    return json({ error: "Not authorized." }, 401);
+  }
+
   if (process.env.MONITOR_ENABLED !== "true") {
     return json({ skipped: "MONITOR_ENABLED is not true." });
   }
@@ -295,20 +307,23 @@ export default async () => {
   await redis(["SET", usageKey(), String(used)]);
   await redis(["EXPIRE", usageKey(), "172800"]);
 
-  return json({
+  const summary = {
     checked,
     fired,
     requestsUsedToday: used,
     cap,
     quotaRemaining: quota,
     log,
-  });
+  };
+  console.log("check-prices:", JSON.stringify(summary));
+  return json(summary);
 };
 
-// Every 15 minutes. This data expires after 60 seconds, so tighter is better —
-// but each run costs one credit per distinct event. While on the 25-credit
-// trial, leave MONITOR_ENABLED off and run this by hand instead.
-// "0 * * * *" = hourly · "*/30 * * * *" = every 30 min
-export const config = {
-  schedule: "*/15 * * * *",
-};
+// No schedule export while we're on the trial.
+//
+// A scheduled Netlify function is invokable ONLY by the scheduler — every
+// external HTTP request gets a 403, which means you can never read its output.
+// Manual runs matter more than automation right now, so this is HTTP-only and
+// protected by ADMIN_KEY. Add the schedule back when moving to a paid plan:
+//
+//   export const config = { schedule: "*/15 * * * *" };
