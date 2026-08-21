@@ -1,4 +1,9 @@
-// Real upcoming events from Ticketmaster's Discovery API.
+// Upcoming events from Ticketmaster's Discovery API.
+//
+// Note on ordering: Discovery exposes no popularity or "trending" ranking for
+// events. Sorting by relevance with no keyword returns something close to
+// arbitrary, so we sort by date and show the soonest events instead. Label it
+// accordingly in the UI — this is "happening soon", not "trending".
 //
 // Discovery is free (5,000 calls/day) and returns each event's public URL,
 // which is what the alert flow needs. No TicketsData credits are spent here —
@@ -35,11 +40,16 @@ export default async (req) => {
   const key = process.env.TICKETMASTER_API_KEY;
   if (!key) return json({ error: "Search isn't configured yet." }, 500);
 
+  const want = Math.min(Number(params.get("size")) || 12, 40);
+
+  // De-duplicating by performer collapses residencies hard — a dozen dates of
+  // one act become one card. Pull a deep pool so there's enough left over.
   const q = new URLSearchParams({
     apikey: key,
     countryCode: "US",
-    size: String(Math.min(Number(params.get("size")) || 12, 40)),
-    sort: "relevance,desc",
+    size: "180",
+    sort: "date,asc",
+    startDateTime: new Date().toISOString().slice(0, 19) + "Z",
   });
 
   const segment = CLASSIFICATIONS[params.get("segment")];
@@ -101,7 +111,8 @@ export default async (req) => {
       seen.add(e._key);
       return true;
     })
-    .map(({ _key, ...rest }) => rest);
+    .map(({ _key, ...rest }) => rest)
+    .slice(0, want);
 
   return json({ events });
 };
