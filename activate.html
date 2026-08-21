@@ -61,6 +61,7 @@
 <div id="modal" class="modal-backdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
     <button class="modal-close" id="mClose" aria-label="Close">&times;</button>
+    <img id="mHero" class="modal-hero" alt="" hidden />
     <h2 id="mTitle" style="font-size: clamp(26px, 3.2vw, 36px); padding-right: 40px;"></h2>
     <div id="mMeta" class="field-help" style="margin-top: 10px; font-size: 12px;"></div>
 
@@ -94,6 +95,12 @@
 
     <details style="margin-bottom: 22px;">
       <summary class="field-label" style="cursor:pointer; color: var(--accent);">Only certain sections?</summary>
+      <div id="seatmapWrap" class="seatmap-wrap" hidden>
+        <img id="seatmapImg" class="seatmap-img" alt="Venue seating chart" loading="lazy" />
+        <div class="field-help" style="margin-top:6px;">
+          Ticketmaster's chart for this venue — find your sections, then type them below.
+        </div>
+      </div>
       <input id="sections" class="input" type="text" placeholder="413, 401, 405" style="margin-top:10px;" />
       <div class="field-help">Leave empty for anywhere in the venue.</div>
     </details>
@@ -155,8 +162,11 @@ async function runSearch(q) {
 
     $('results').innerHTML = body.events.map((e, i) =>
       `<button class="result-row" data-i="${i}">
-         <span class="result-name">${e.name}</span>
-         <span class="result-meta">${fmtDate(e.date)} · ${e.venue}${e.city ? ', ' + e.city : ''}</span>
+         ${e.image ? `<img class="result-thumb" src="${e.image}" alt="" loading="lazy">` : ''}
+         <span class="result-text">
+           <span class="result-name">${e.name}</span>
+           <span class="result-meta">${fmtDate(e.date)} · ${e.venue}${e.city ? ', ' + e.city : ''}</span>
+         </span>
        </button>`).join('');
 
     document.querySelectorAll('.result-row').forEach(btn =>
@@ -182,6 +192,9 @@ async function loadGrid(segment) {
 
     $('grid').innerHTML = events.map((e, i) => `
       <div class="event-card">
+        ${e.image
+          ? `<div class="event-thumb"><img src="${e.image}" alt="" loading="lazy"></div>`
+          : ''}
         <div class="event-badge">${badge(e.segment)}</div>
         <div class="event-date">${fmtDate(e.date)}</div>
         <div class="event-name">${e.name}</div>
@@ -216,6 +229,14 @@ function openModal(e) {
     b.setAttribute('aria-pressed', String(i === 0)));
   $('mTitle').textContent = e.name;
   $('mMeta').textContent = fmtDate(e.date) + ' · ' + e.venue + (e.city ? ', ' + e.city : '');
+
+  const hero = $('mHero');
+  if (e.image) { hero.src = e.image; hero.hidden = false; }
+  else { hero.hidden = true; hero.removeAttribute('src'); }
+
+  const smWrap = $('seatmapWrap');
+  if (e.seatmap) { $('seatmapImg').src = e.seatmap; smWrap.hidden = false; }
+  else { smWrap.hidden = true; }
   $('mMsg').innerHTML = '';
   $('price').value = '';
   $('sections').value = '';
