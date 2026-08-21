@@ -74,10 +74,29 @@ async function fetchListings(eventUrl, platform = "ticketmaster") {
   const offers = payload?.body?._embedded?.offer;
   if (!Array.isArray(offers)) return { error: "No listings in the response." };
 
+  // Ticketmaster splits an event's inventory two ways:
+  //   resale  — someone reselling a ticket they already bought
+  //   primary — sold by the team or promoter, first sale
+  // Both appear on the public event page, so both count. A buyer wants the
+  // cheapest seat at their number; who is selling it is beside the point.
+  //
+  // Section lives in two different places depending on type. Resale offers
+  // carry it directly; primary offers don't, but the `facets` block maps
+  // offer IDs to sections, so we join that back on to fill the gap.
+  const sectionByOffer = new Map();
+  for (const facet of payload?.body?.facets || []) {
+    if (!facet.section) continue;
+    for (const id of facet.offers || []) {
+      if (!sectionByOffer.has(id)) sectionByOffer.set(id, facet.section);
+    }
+  }
+
   const listings = offers
-    .filter((o) => o.inventoryType === "resale")
     .map((o) => ({
-      section: o.section || null,
+      kind: o.inventoryType === "resale" ? "resale" : "primary",
+      section: o.section || sectionByOffer.get(o.offerId) || null,
+      // Primary tickets are assigned a row at checkout, so this stays null
+      // for them. That's Ticketmaster's behaviour, not missing data.
       row: o.row || null,
       base: o.listPrice,
       total: o.totalPrice,
@@ -101,6 +120,9 @@ function bestMatch(listings, alert) {
     pool = pool.filter((l) => l.quantities.includes(alert.quantity));
   }
 
+  // Only seated listings can satisfy a section request. Primary inventory
+  // has no section, so it drops out here — which is the right answer when
+  // someone has asked for specific sections.
   if (alert.sections && alert.sections.length) {
     const wanted = alert.sections.map((s) => String(s).toUpperCase());
     pool = pool.filter(
@@ -114,6 +136,18 @@ function bestMatch(listings, alert) {
 
 function minutesOld(iso) {
   return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+}
+
+// Ticketmaster keeps seat selection in its own session state, never in the
+// URL — so there is no way to deep-link a specific listing. Quantity IS
+// accepted as a parameter though, so the buyer at least lands on the event
+// already filtered to the number of seats they asked for, with the seat we
+// found named in the email above.
+function buyUrl(alert) {
+  const base = alert.eventUrl;
+  if (!base) return "https://www.ticketmaster.com";
+  const qty = Number(alert.quantity) || 1;
+  return `${base}${base.includes("?") ? "&" : "?"}qty=${qty}`;
 }
 
 function emailBody(alert, hit, asOf) {
@@ -134,6 +168,11 @@ function emailBody(alert, hit, asOf) {
     .filter(Boolean)
     .join(" &middot; ");
 
+  // Primary tickets get their row assigned at checkout.
+  const seatNote = hit.kind === "primary" && !hit.row
+    ? "Sold by the venue &middot; row assigned at checkout"
+    : "";
+
   return `<!doctype html>
 <html>
 <body style="margin:0;padding:0;background:#0e0f10;font-family:Georgia,'Times New Roman',serif;">
@@ -152,7 +191,10 @@ function emailBody(alert, hit, asOf) {
     </p>
 
     <div style="background:#16181a;border-radius:10px;padding:22px 24px;margin-bottom:10px;">
-      ${seat ? `<div style="font-size:17px;margin-bottom:14px;">${seat}</div>` : ""}
+      <div style="font-size:17px;margin-bottom:${seatNote ? "4" : "14"}px;">
+        ${seat || "Best available"}
+      </div>
+      ${seatNote ? `<div style="font-size:12.5px;color:#7d786f;margin-bottom:14px;">${seatNote}</div>` : ""}
       <table style="width:100%;font-family:'JetBrains Mono',Menlo,monospace;font-size:14px;">
         <tr>
           <td style="color:#9a958c;padding-bottom:6px;">Ticket</td>
@@ -177,13 +219,17 @@ function emailBody(alert, hit, asOf) {
       Your target was $${alert.maxPrice.toFixed(2)} all-in${alert.quantity > 1 ? `, ${alert.quantity} together` : ""}.
     </p>
 
-    <a href="${alert.eventUrl}"
+    <a href="${buyUrl(alert)}"
        style="display:block;background:#e8c468;color:#0e0f10;text-decoration:none;
               text-align:center;padding:15px;border-radius:8px;font-size:16px;
               font-family:Georgia,serif;margin-bottom:22px;">
       Go to tickets
     </a>
 
+    <p style="font-size:12px;line-height:1.6;color:#7d786f;margin:0 0 8px;">
+      The link opens this event with ${alert.quantity > 1 ? alert.quantity + " tickets" : "1 ticket"}
+      already selected&nbsp;&mdash; look for ${seat || "this price"} in the list.
+    </p>
     <p style="font-size:12px;line-height:1.6;color:#7d786f;margin:0;">
       Priced ${age === 0 ? "moments" : age + " minute" + (age === 1 ? "" : "s")} ago,
       fees included. Resale moves fast &mdash; this seat may already be gone.
@@ -273,7 +319,11 @@ export default async (req) => {
     }
 
     quota = result.quotaRemaining;
-    log.push(`${result.listings.length} live resale listings found.`);
+    const resaleCount = result.listings.filter((l) => l.kind === "resale").length;
+    log.push(
+      `${result.listings.length} live listings ` +
+      `(${resaleCount} resale, ${result.listings.length - resaleCount} primary).`
+    );
 
     for (const alert of alerts) {
       if (alert.eventUrl !== eventUrl || alert.status !== "watching") continue;
