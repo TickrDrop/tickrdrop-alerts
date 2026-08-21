@@ -14,6 +14,16 @@ const json = (body, status = 200) =>
     },
   });
 
+// Discovery returns a spread of crops. Prefer a wide one around card width;
+// fall back to whatever is available rather than showing nothing.
+function pickImage(images) {
+  if (!Array.isArray(images) || !images.length) return null;
+  const wide = images
+    .filter((i) => i.url && i.ratio === "16_9" && (i.width || 0) >= 480)
+    .sort((a, b) => (a.width || 0) - (b.width || 0))[0];
+  return (wide || images.find((i) => i.url) || {}).url || null;
+}
+
 const CLASSIFICATIONS = {
   music: "music",
   sports: "sports",
@@ -56,10 +66,12 @@ export default async (req) => {
   }
 
   const body = await res.json();
-  const events = (body?._embedded?.events || [])
+
+  const mapped = (body?._embedded?.events || [])
     .filter((e) => e.url && e.dates?.start?.localDate)
     .map((e) => {
       const venue = e._embedded?.venues?.[0] || {};
+      const attraction = e._embedded?.attractions?.[0] || {};
       const range = (e.priceRanges || [])[0];
       return {
         name: e.name,
@@ -71,10 +83,25 @@ export default async (req) => {
         // Ticketmaster's own advertised floor, when they publish one. This is
         // a range they supply, not a live price we fetched.
         from: range?.min ? Math.round(range.min) : null,
+        image: pickImage(e.images),
+        seatmap: e.seatmap?.staticUrl || null,
         url: e.url,
+        // Used only for de-duplication below.
+        _key: attraction.id || e.name,
       };
+    });
+
+  // Discovery happily returns a dozen dates of the same residency. Show each
+  // performer once — the soonest date — so the grid isn't eleven Eagles shows.
+  const seen = new Set();
+  const events = mapped
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((e) => {
+      if (seen.has(e._key)) return false;
+      seen.add(e._key);
+      return true;
     })
-    .filter((e, i, all) => all.findIndex((o) => o.url === e.url) === i);
+    .map(({ _key, ...rest }) => rest);
 
   return json({ events });
 };
