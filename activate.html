@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GJZHSVKT7E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-GJZHSVKT7E');
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Set an alert — TickrDrop</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="nav-mount"></div>
+
+<header class="container" style="padding-top: 64px;">
+  <div class="eyebrow fade-up">— Set an alert</div>
+  <h1 class="fade-up delay-1" style="margin-top: 16px; font-size: clamp(38px, 5vw, 60px); max-width: 16ch;">
+    What are you <em class="gold">hunting for?</em>
+  </h1>
+  <p class="fade-up delay-2 muted" style="font-size: 19px; line-height: 1.5; max-width: 52ch; margin-top: 20px;">
+    Search any artist, team or show. Pick your date, name your price, and we'll watch it for you.
+  </p>
+
+  <div class="search-wrap fade-up delay-3" style="margin-top: 32px;">
+    <input id="q" class="input search-input" type="text"
+           placeholder="Try &ldquo;Karol G&rdquo;, &ldquo;Mariners&rdquo;, &ldquo;Hamilton&rdquo;&hellip;"
+           autocomplete="off" />
+    <div id="searchStatus" class="field-help" style="min-height: 18px;"></div>
+    <div id="results" class="results-list"></div>
+  </div>
+</header>
+
+<section class="container section">
+  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div>
+      <h2 style="font-size: clamp(26px, 3vw, 34px);">Trending right now</h2>
+      <div class="eyebrow" style="margin-top: 8px;">— Live from Ticketmaster</div>
+    </div>
+    <div class="seg-tabs" id="segTabs">
+      <button class="seg-tab active" data-seg="">All</button>
+      <button class="seg-tab" data-seg="music">Concerts</button>
+      <button class="seg-tab" data-seg="sports">Sports</button>
+      <button class="seg-tab" data-seg="arts">Theater</button>
+    </div>
+  </div>
+
+  <div id="grid" class="event-grid" style="margin-top: 32px;">
+    <div class="muted" style="font-family: var(--mono); font-size: 13px;">Loading events…</div>
+  </div>
+</section>
+
+<!-- Alert modal -->
+<div id="modal" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="modal-close" id="mClose" aria-label="Close">&times;</button>
+    <h2 id="mTitle" style="font-size: clamp(26px, 3.2vw, 36px); padding-right: 40px;"></h2>
+    <div id="mMeta" class="field-help" style="margin-top: 10px; font-size: 12px;"></div>
+
+    <div class="divider" style="margin: 26px 0 22px;"></div>
+
+    <div class="field">
+      <label class="field-label">How many seats</label>
+      <div class="qty-row" id="qty">
+        <button type="button" data-q="1" aria-pressed="true">1</button>
+        <button type="button" data-q="2" aria-pressed="false">2</button>
+        <button type="button" data-q="3" aria-pressed="false">3</button>
+        <button type="button" data-q="4" aria-pressed="false">4</button>
+      </div>
+      <div class="field-help">We only alert on listings that sell this many together.</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Your target price <span class="req">*</span></label>
+      <div class="input-prefix">
+        <span class="prefix">$</span>
+        <input id="price" class="input" type="number" min="1" step="1"
+               placeholder="What's the most you'd pay?" inputmode="decimal" />
+      </div>
+      <div class="field-help">Per ticket, fees included — what you'd actually be charged.</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Email <span class="req">*</span></label>
+      <input id="email" class="input" type="email" placeholder="you@email.com" autocomplete="email" />
+    </div>
+
+    <details style="margin-bottom: 22px;">
+      <summary class="field-label" style="cursor:pointer; color: var(--accent);">Only certain sections?</summary>
+      <input id="sections" class="input" type="text" placeholder="413, 401, 405" style="margin-top:10px;" />
+      <div class="field-help">Leave empty for anywhere in the venue.</div>
+    </details>
+
+    <div class="divider divider-strong" style="margin: 24px 0;"></div>
+
+    <div style="display:flex; align-items:baseline; justify-content:space-between;">
+      <span class="field-label" style="margin:0;">Total</span>
+      <span>
+        <span style="font-family: var(--serif); font-size: 34px; color: var(--accent);">Free</span>
+        <span class="field-help" style="display:inline; margin-left:8px;">during beta</span>
+      </span>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" id="mGo" style="margin-top: 22px;">Start watching →</button>
+    <div id="mMsg"></div>
+    <div class="field-help" style="margin-top: 14px; text-align:center;">
+      No card. No subscription. Prices include marketplace fees.
+    </div>
+  </div>
+</div>
+
+<div id="footer-mount"></div>
+<script src="chrome.js"></script>
+<script>
+renderChrome('activate');
+
+const $ = id => document.getElementById(id);
+let picked = null, quantity = 1, searchTimer = null;
+
+const fmtDate = d => d
+  ? new Date(d + 'T12:00:00').toLocaleDateString('en-US',
+      { weekday:'short', month:'short', day:'numeric', year:'numeric' })
+  : '';
+
+const badge = seg => ({ Music:'♪ Concert', Sports:'◆ Sports' }[seg]) || '● Event';
+
+/* ---------- search ---------- */
+$('q').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = $('q').value.trim();
+  $('results').innerHTML = '';
+  if (q.length < 3) { $('searchStatus').textContent = ''; return; }
+  $('searchStatus').textContent = 'Searching…';
+  searchTimer = setTimeout(() => runSearch(q), 350);
+});
+
+async function runSearch(q) {
+  try {
+    const res = await fetch('/.netlify/functions/search-events?q=' + encodeURIComponent(q));
+    const body = await res.json();
+    $('searchStatus').textContent = '';
+
+    if (body.error) { $('searchStatus').textContent = body.error; return; }
+    if (!body.events.length) {
+      $('searchStatus').textContent = 'Nothing upcoming matched that.';
+      return;
+    }
+
+    $('results').innerHTML = body.events.map((e, i) =>
+      `<button class="result-row" data-i="${i}">
+         <span class="result-name">${e.name}</span>
+         <span class="result-meta">${fmtDate(e.date)} · ${e.venue}${e.city ? ', ' + e.city : ''}</span>
+       </button>`).join('');
+
+    document.querySelectorAll('.result-row').forEach(btn =>
+      btn.addEventListener('click', () => openModal(body.events[+btn.dataset.i])));
+  } catch {
+    $('searchStatus').textContent = "Search didn't go through. Try again.";
+  }
+}
+
+/* ---------- trending grid ---------- */
+async function loadGrid(segment) {
+  $('grid').innerHTML = '<div class="muted" style="font-family: var(--mono); font-size:13px;">Loading events…</div>';
+  try {
+    const res = await fetch('/.netlify/functions/trending-events?size=12'
+      + (segment ? '&segment=' + segment : ''));
+    const body = await res.json();
+    const events = body.events || [];
+
+    if (!events.length) {
+      $('grid').innerHTML = '<div class="muted">No events found right now.</div>';
+      return;
+    }
+
+    $('grid').innerHTML = events.map((e, i) => `
+      <div class="event-card">
+        <div class="event-badge">${badge(e.segment)}</div>
+        <div class="event-date">${fmtDate(e.date)}</div>
+        <div class="event-name">${e.name}</div>
+        <div class="event-venue">${e.venue}${e.city ? ' · ' + e.city : ''}</div>
+        <div class="event-foot">
+          <span class="event-from">${e.from ? 'From <strong>$' + e.from + '</strong>' : ''}</span>
+          <button class="btn btn-sm" data-g="${i}">Set alert</button>
+        </div>
+      </div>`).join('');
+
+    document.querySelectorAll('[data-g]').forEach(btn =>
+      btn.addEventListener('click', () => openModal(events[+btn.dataset.g])));
+  } catch {
+    $('grid').innerHTML = '<div class="muted">Couldn\'t load events.</div>';
+  }
+}
+
+document.querySelectorAll('.seg-tab').forEach(tab =>
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.seg-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    loadGrid(tab.dataset.seg);
+  }));
+
+loadGrid('');
+
+/* ---------- modal ---------- */
+function openModal(e) {
+  picked = e;
+  quantity = 1;
+  document.querySelectorAll('#qty button').forEach((b, i) =>
+    b.setAttribute('aria-pressed', String(i === 0)));
+  $('mTitle').textContent = e.name;
+  $('mMeta').textContent = fmtDate(e.date) + ' · ' + e.venue + (e.city ? ', ' + e.city : '');
+  $('mMsg').innerHTML = '';
+  $('price').value = '';
+  $('sections').value = '';
+  $('modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('price').focus(), 50);
+}
+
+function closeModal() {
+  $('modal').hidden = true;
+  document.body.style.overflow = '';
+}
+
+$('mClose').addEventListener('click', closeModal);
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').hidden) closeModal(); });
+
+$('qty').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-q]');
+  if (!btn) return;
+  quantity = Number(btn.dataset.q);
+  document.querySelectorAll('#qty button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b === btn)));
+});
+
+function msg(kind, text) {
+  $('mMsg').innerHTML = `<div class="msg ${kind}">${text}</div>`;
+}
+
+$('mGo').addEventListener('click', async () => {
+  $('mMsg').innerHTML = '';
+  if (!picked) return;
+
+  const maxPrice = Number($('price').value);
+  if (!(maxPrice > 0)) { msg('err', "Enter the most you'd pay per ticket."); return; }
+  const email = $('email').value.trim();
+  if (!email) { msg('err', 'Add an email so we can reach you.'); return; }
+
+  $('mGo').disabled = true;
+  $('mGo').textContent = 'Saving…';
+
+  try {
+    const res = await fetch('/.netlify/functions/create-alert', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventUrl: picked.url, eventName: picked.name, eventDate: picked.date,
+        venue: picked.venue, city: picked.city,
+        maxPrice, email, quantity, sections: $('sections').value
+      })
+    });
+    const body = await res.json();
+    if (!res.ok) { msg('err', body.error || "That didn't save."); return; }
+
+    msg('ok', `Watching <strong>${picked.name}</strong>. We'll email ${email} when `
+      + (quantity > 1 ? quantity + ' seats together drop' : 'a seat drops')
+      + ` to $${maxPrice.toFixed(2)} or less, fees included.`);
+    $('price').value = '';
+    $('sections').value = '';
+  } catch {
+    msg('err', "That didn't save. Check your connection and try again.");
+  } finally {
+    $('mGo').disabled = false;
+    $('mGo').textContent = 'Start watching →';
+  }
+});
+</script>
+</body>
+</html>
